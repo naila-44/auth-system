@@ -11,17 +11,17 @@ export interface JwtPayload {
   email?: string;
 }
 
-// Hash password
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-// Compare password
+
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
-// Sign token
+
 export function signToken(payload: JwtPayload): Promise<string> {
   const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
   return new Promise((resolve, reject) => {
@@ -32,7 +32,6 @@ export function signToken(payload: JwtPayload): Promise<string> {
   });
 }
 
-// Verify token
 export function verifyToken(token: string): JwtPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JwtPayload;
