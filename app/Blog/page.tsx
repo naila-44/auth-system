@@ -18,10 +18,12 @@ export default function BlogPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const router = useRouter();
 
+  // Helper to remove HTML tags from content
   const stripHtml = (html: string): string =>
     html ? html.replace(/<[^>]*>?/gm, "") : "";
 
-  useEffect(() => {
+  // Fetch published posts
+  const fetchPosts = () => {
     axios
       .get("/api/posts/published")
       .then((res) => {
@@ -29,6 +31,27 @@ export default function BlogPage() {
         else setPosts([]);
       })
       .catch((err) => console.error("Error fetching posts:", err));
+  };
+
+  // Delete a post
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const res = await axios.delete(`/api/posts/${id}`);
+      if (res.data.success) {
+        fetchPosts();
+        alert("Post deleted successfully!");
+      } else {
+        alert("Failed to delete post.");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("An error occurred while deleting the post.");
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
   }, []);
 
   return (
@@ -41,13 +64,33 @@ export default function BlogPage() {
         {posts.length === 0 ? (
           <p className="text-center text-gray-500">No posts available yet.</p>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
               <div
                 key={post._id}
-                onClick={() => router.push(`/Blog/${post._id}`)} // ✅ Click anywhere on card
-                className="cursor-pointer group bg-white border border-[#d6ccc2] rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] transition-all overflow-hidden flex flex-col justify-between"
+                className="relative cursor-pointer group bg-white border border-[#d6ccc2] rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] transition-all overflow-hidden flex flex-col"
+                onClick={() => router.push(`/Blog/${post._id}`)}
               >
+                {/* Edit & Delete buttons (top-right, one line) */}
+                <div
+                  className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => e.stopPropagation()} // prevent card click
+                >
+                  <button
+                    onClick={() => router.push(`/dashboard/edit-post/${post._id}`)}
+                    className="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(post._id)}
+                    className="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                {/* Post image */}
                 {post.imageUrl && (
                   <img
                     src={post.imageUrl}
@@ -56,6 +99,7 @@ export default function BlogPage() {
                   />
                 )}
 
+                {/* Post content */}
                 <div className="p-5 flex flex-col flex-1">
                   <h2 className="text-xl font-semibold text-[#3e2723] mb-2 group-hover:text-[#7f5539] transition">
                     {post.title}

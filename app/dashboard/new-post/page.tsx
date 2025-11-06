@@ -1,35 +1,97 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
+// Dynamic import for ReactQuill
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
+
+// Type-safe ref for ReactQuill
+type QuillRefType = {
+  getEditor: () => any;
+};
 
 export default function NewPostPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("draft");
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const quillRef = useRef<QuillRefType | null>(null);
+
+  // Image handler for ReactQuill
+  const imageHandler = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await axios.post("/api/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        const imageUrl = res.data.url;
+        const editor = quillRef.current?.getEditor();
+        if (!editor) return;
+
+        const range = editor.getSelection(true);
+        editor.insertEmbed(range.index, "image", imageUrl);
+
+        // Resize inserted images
+        setTimeout(() => {
+          const imgs = document.querySelectorAll(".ql-editor img");
+          imgs.forEach((img) => {
+            (img as HTMLImageElement).style.maxWidth = "100%";
+            (img as HTMLImageElement).style.height = "auto";
+            (img as HTMLImageElement).style.display = "block";
+            (img as HTMLImageElement).style.margin = "10px 0";
+            (img as HTMLImageElement).style.borderRadius = "8px";
+          });
+        }, 100);
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        alert("Failed to upload image");
+      }
+    };
+  };
+
+  // ReactQuill toolbar modules
+  const modules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ["bold", "italic", "underline", "blockquote"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["link", "image"],
+          ["clean"],
+        ],
+        handlers: {
+          image: imageHandler,
+        },
+      },
+    }),
+    []
+  );
+
+  // Submit post
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("content", content);
-      formData.append("status", status);
-      if (image) formData.append("image", image);
-
-      const res = await axios.post("/api/posts", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
+      const res = await axios.post("/api/posts", { title, content, status });
       if (res.status === 201) {
         alert(
           status === "draft"
@@ -46,34 +108,24 @@ export default function NewPostPage() {
     }
   };
 
+  // AI generate dummy content
   const handleGenerateAI = () => {
     setContent(
       "Here's an inspiring post written by AI. You can edit or expand it as you like!"
     );
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setImage(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
-  };
-
   return (
-    <main className="min-h-2 bg-[#fdf7f0] p-5 flex flex-col items-center mt-15 ">
-      <h1 className="text-3xl font-bold text-[#7f5539] mb-3 text-center">
+    <main className="min-h-screen bg-[#fdf7f0] flex flex-col items-center py-16 px-4">
+      <h1 className="text-3xl font-bold text-[#7f5539] mb-8 text-center">
         Create New Post
       </h1>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 w-full max-w-3xl bg-white p-8 rounded-xl shadow-md"
+        className="space-y-6 w-full max-w-3xl bg-white p-8 rounded-2xl shadow-lg"
       >
+        {/* Title */}
         <input
           type="text"
           placeholder="Enter post title..."
@@ -83,6 +135,7 @@ export default function NewPostPage() {
           className="w-full border border-[#e6ccb2] p-4 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#9c6644] transition"
         />
 
+        {/* AI Generate */}
         <div className="flex justify-end">
           <button
             type="button"
@@ -93,40 +146,21 @@ export default function NewPostPage() {
           </button>
         </div>
 
-        <div className="border-[#e6ccb2] rounded-md">
+        {/* Editor */}
+        <div className="border border-[#e6ccb2] rounded-md overflow-hidden">
           <ReactQuill
+            ref={quillRef}
             value={content}
             onChange={setContent}
-            className="h-40 text-black placeholder-gray-500"
+            modules={modules}
+            className="h-64 text-black placeholder-gray-500 px-2"
             placeholder="Write your post content here..."
           />
         </div>
 
-      
-        <div className="flex flex-col gap-2">
-          <label className="text-gray-700 font-medium mt-7">Upload Image</label>
-          <label className="flex items-center justify-between border border-[#e6ccb2] p-2 rounded-md bg-white cursor-pointer text-gray-700 hover:bg-[#f0e6d8] transition">
-            {image ? image.name : "Choose image..."}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </label>
-
-          {imagePreview && (
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="mt-1 max-h-20 object-contain rounded-md border border-[#e6ccb2]"
-            />
-          )}
-        </div>
-
-       
+        {/* Status */}
         <div className="flex flex-col">
-          <label className="text-gray-600 font-medium">Post Status</label>
+          <label className="text-gray-600 font-medium mb-1">Post Status</label>
           <select
             name="status"
             value={status}
@@ -138,7 +172,8 @@ export default function NewPostPage() {
           </select>
         </div>
 
-        <div className="flex gap-3 mt-2 justify-end">
+        {/* Actions */}
+        <div className="flex gap-3 justify-end">
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
@@ -151,7 +186,7 @@ export default function NewPostPage() {
             disabled={loading}
             className={`${
               status === "draft" ? "bg-[#b7a69e]" : "bg-[#7f5539]"
-            } text-white py-2 px-4 rounded-md text-sm hover:opacity-90 transition`}
+            } text-white py-2 px-6 rounded-md text-sm hover:opacity-90 transition`}
           >
             {loading
               ? status === "draft"

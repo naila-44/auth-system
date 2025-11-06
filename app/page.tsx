@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import Navbar from "./components/Navbar";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Navbar from "./components/Navbar";
 
 type Post = {
   _id: string;
@@ -25,8 +25,8 @@ export default function HomePage() {
         const res = await fetch("/api/posts/published");
         const data = await res.json();
         setPosts(data?.posts || []);
-      } catch (error) {
-        console.error("Failed to fetch posts", error);
+      } catch (err) {
+        console.error(err);
         setPosts([]);
       } finally {
         setLoading(false);
@@ -45,7 +45,6 @@ export default function HomePage() {
         style={{ backgroundImage: "url('/hero.png')" }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-[#f8f5f2]/30 via-[#f8f5f2]/60 to-[#f8f5f2]/80 backdrop-blur-[2px]" />
-
         <motion.div
           className="relative z-10 max-w-3xl text-center"
           initial={{ opacity: 0, y: 50 }}
@@ -96,11 +95,7 @@ export default function HomePage() {
         ) : (
           <div className="grid md:grid-cols-3 gap-10">
             {posts.map((post, index) => (
-              <Link
-                key={post._id}
-                href={`/posts/${post._id}`}
-                className="block"
-              >
+              <Link key={post._id} href={`/posts/${post._id}`} className="block">
                 <motion.div
                   className="bg-white shadow-lg rounded-2xl overflow-hidden border border-[#e6ccb2]/70 hover:shadow-2xl transition-transform transform hover:-translate-y-2 cursor-pointer"
                   initial={{ opacity: 0, y: 40 }}
@@ -118,9 +113,7 @@ export default function HomePage() {
                     />
                   )}
                   <div className="p-6">
-                    <h3 className="text-2xl font-semibold text-[#7f5539] mb-3">
-                      {post.title}
-                    </h3>
+                    <h3 className="text-2xl font-semibold text-[#7f5539] mb-3">{post.title}</h3>
                     <div
                       className="text-[#7f5539]/70 mb-5 text-base"
                       dangerouslySetInnerHTML={{ __html: post.content.slice(0, 150) + "..." }}

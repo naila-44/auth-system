@@ -9,7 +9,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-
 export async function GET() {
   try {
     await connect();
@@ -24,16 +23,12 @@ export async function GET() {
   }
 }
 
-
 export async function POST(req: Request) {
   try {
     await connect();
 
-    const formData = await req.formData();
-    const title = formData.get("title") as string;
-    const content = formData.get("content") as string;
-    const status = formData.get("status") as string; 
-    const file = formData.get("image") as File | null;
+    const body = await req.json(); // <-- parse JSON
+    const { title, content, status, imageUrl } = body;
 
     if (!title || !content) {
       return NextResponse.json(
@@ -42,31 +37,12 @@ export async function POST(req: Request) {
       );
     }
 
-  
-    let imageUrl = "";
-    if (file) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const uploadResult: any = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "posts" },
-          (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          }
-        );
-        stream.end(buffer);
-      });
-      imageUrl = uploadResult.secure_url;
-    }
-
-   
     const published = status === "published";
 
-   
     const newPost = new Post({
       title,
       content,
-      imageUrl,
+      imageUrl: imageUrl || "", // optional image
       published,
     });
 

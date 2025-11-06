@@ -3,14 +3,15 @@ import mongoose from "mongoose";
 import { connect } from "@/lib/db";
 import Post from "@/lib/models/Post";
 
+// ✅ GET POST BY ID
 export async function GET(
   _req: Request,
-  context: { params: Promise<{ id: string }> } 
+  { params }: { params: { id: string } }
 ) {
   try {
     await connect();
 
-    const { id } = await context.params; 
+    const { id } = params; // ✅ no need to await
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { success: false, error: "Invalid or missing post ID." },
@@ -36,14 +37,15 @@ export async function GET(
   }
 }
 
+// ✅ DELETE POST
 export async function DELETE(
   _req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     await connect();
 
-    const { id } = await context.params;
+    const { id } = params;
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { success: false, error: "Invalid or missing post ID." },
@@ -72,14 +74,15 @@ export async function DELETE(
   }
 }
 
+// ✅ UPDATE POST
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     await connect();
 
-    const { id } = await context.params;
+    const { id } = params;
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { success: false, error: "Invalid or missing post ID." },

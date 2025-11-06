@@ -10,9 +10,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  MessageSquare,
-  Bookmark,
-  Bell,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -22,7 +19,6 @@ export default function Sidebar() {
     { name: "Home", href: "/", icon: <Home size={18} /> },
     { name: "My Posts", href: "/posts", icon: <FileText size={18} /> },
     { name: "Analytics", href: "/analytics", icon: <BarChart2 size={18} /> },
-   
   ];
 
   const bottomLinks = [
@@ -34,27 +30,30 @@ export default function Sidebar() {
   return (
     <div
       className={`bg-white border-r shadow-sm transition-all duration-300 h-screen flex flex-col justify-between ${
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-16" : "w-40"
       }`}
     >
-    
       <div className="p-4">
-     
+        {/* Top section */}
         <div className="flex items-center justify-between mb-8">
           {!collapsed && (
-            <Link href="/" className="text-2xl font-bold text-[#7f5539] tracking-wide">
-              
+            <Link
+              href="/"
+              className="text-2xl font-bold text-[#7f5539] tracking-wide"
+            >
+              Whisply
             </Link>
           )}
+          {/* Menu button - only visible on mobile */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-2 rounded hover:bg-[#f0e6d8]"
+            className="p-2 rounded hover:bg-[#f0e6d8] lg:hidden"
           >
             <Menu size={20} className="text-[#7f5539]" />
           </button>
         </div>
 
-     
+        {/* Navigation Links */}
         <nav className="space-y-1">
           {navLinks.map((link, idx) => (
             <Link
@@ -71,7 +70,7 @@ export default function Sidebar() {
         </nav>
       </div>
 
-    
+      {/* Bottom Links */}
       <div className="p-4 border-t space-y-1">
         {bottomLinks.map((link, idx) => (
           <Link

@@ -5,13 +5,25 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import axios from "axios";
 
+// Dynamic import for ReactQuill (no SSR)
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
 
+// Post interface
+interface Post {
+  title: string;
+  content: string;
+  imageUrl: string;
+  status: "draft" | "published";
+}
+
 export default function EditPostPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string; // ensure string
   const router = useRouter();
-  const [post, setPost] = useState({
+
+  // Initialize post state safely
+  const [post, setPost] = useState<Post>({
     title: "",
     content: "",
     imageUrl: "",
@@ -20,12 +32,20 @@ export default function EditPostPage() {
 
   const [loading, setLoading] = useState(true);
 
+  // Fetch post data
   useEffect(() => {
     if (!id) return;
     axios
       .get(`/api/posts/${id}`)
       .then((res) => {
-        setPost(res.data.post);
+        const fetched = res.data.post;
+        // Ensure all fields are strings
+        setPost({
+          title: fetched.title || "",
+          content: fetched.content || "",
+          imageUrl: fetched.imageUrl || "",
+          status: fetched.status || "draft",
+        });
         setLoading(false);
       })
       .catch((err) => {
@@ -34,22 +54,26 @@ export default function EditPostPage() {
       });
   }, [id]);
 
-  const handleChange = (e) => {
-    setPost({ ...post, [e.target.name]: e.target.value });
+  // Handle input/select changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setPost({ ...post, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
+  // Submit updated post
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await axios.put(`/api/posts/${id}`, post);
       alert("Post updated successfully!");
-      router.push("/dashboard");
+      router.push("/dashboard"); // navigate back to dashboard
     } catch (error) {
       console.error("Error updating post:", error);
       alert("Failed to update post.");
     }
   };
 
+  // Loading state
   if (loading) return <p className="text-center mt-10">Loading...</p>;
 
   return (
@@ -60,7 +84,7 @@ export default function EditPostPage() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-      
+          {/* Title */}
           <input
             type="text"
             name="title"
@@ -70,14 +94,18 @@ export default function EditPostPage() {
             placeholder="Post title..."
             className="w-full text-black placeholder:text-gray-400 border border-[#d6ccc2] rounded-lg p-3 focus:ring-[#7f5539] focus:border-[#7f5539] transition"
           />
+
+          {/* Content */}
           <div className="border border-[#d6ccc2] rounded-lg overflow-hidden">
             <ReactQuill
-              value={post.content}
+              value={post.content || ""} // <-- avoid value error
               onChange={(value) => setPost({ ...post, content: value })}
               theme="snow"
-              className="h-30  text-black placeholder:text-gray-400 "
+              className="h-40 text-black placeholder:text-gray-400"
             />
           </div>
+
+          {/* Image URL */}
           <input
             type="text"
             name="imageUrl"
@@ -86,6 +114,8 @@ export default function EditPostPage() {
             placeholder="Image URL..."
             className="w-full text-black placeholder:text-gray-400 border border-[#d6ccc2] rounded-lg p-3 focus:ring-[#7f5539] focus:border-[#7f5539] transition"
           />
+
+          {/* Status */}
           <select
             name="status"
             value={post.status}
@@ -95,6 +125,8 @@ export default function EditPostPage() {
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
+
+          {/* Submit */}
           <div className="flex justify-end">
             <button
               type="submit"

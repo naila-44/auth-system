@@ -1,241 +1,203 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
-import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
-import { io, Socket } from "socket.io-client";
+import { MessageCircle, Eye, Heart, Share2, Copy } from "lucide-react";
 
-type Post = {
-  _id: string;
-  title: string;
-  desc?: string;
-  content: string;
-  imageUrl?: string;
-};
-
-type Comment = {
-  id: string | number;
-  text: string;
-  author: string;
-  createdAt: string;
-};
-
-let socket: Socket;
-
-function stripHtml(html: string) {
-  return html.replace(/<[^>]+>/g, "");
-}
-
-export default function PostDetailPage() {
+export default function BlogDetailPage() {
   const { id } = useParams();
-  const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [comment, setComment] = useState("");
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [typingUser, setTypingUser] = useState("");
-  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
-  const commentsEndRef = useRef<HTMLDivElement>(null);
+  const [post, setPost] = useState<any>(null);
+  const [related, setRelated] = useState<any[]>([]);
+  const [showComments, setShowComments] = useState(false);
 
-  const scrollToBottom = () =>
-    commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-
-  // Fetch post & comments
+  // ✅ Fetch Post and Related
   useEffect(() => {
     if (!id) return;
-
-    let cancel = false;
-
-    async function fetchPost() {
+    const fetchPostData = async () => {
       try {
-        const res = await axios.get(`/api/posts/${id}`);
-        if (!cancel) {
-          const fetchedPost = res.data.post;
-          fetchedPost.content = stripHtml(fetchedPost.content);
-          setPost(fetchedPost);
-          setComments(res.data.comments || []);
-          setLoading(false);
-          scrollToBottom();
-        }
-      } catch (err) {
-        if (!cancel) setLoading(false);
-        console.error("Error fetching post:", err);
+        const postRes = await fetch(`/api/posts/${id}`);
+        const postData = await postRes.json();
+        setPost(postData.post);
+
+        const relatedRes = await fetch(`/api/posts/related?postId=${id}`);
+        const relatedData = await relatedRes.json();
+        setRelated(relatedData.related || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
       }
-    }
-
-    fetchPost();
-
-    return () => {
-      cancel = true;
     };
+    fetchPostData();
   }, [id]);
 
-  // Socket setup
-  useEffect(() => {
-    if (!socket) socket = io("/", { path: "/api/socket" });
-
-    const handleReceiveComment = (newComment: Comment) => {
-      if (newComment && newComment.id && post?._id) {
-        setComments((prev) => [...prev, newComment]);
-        scrollToBottom();
-      }
-    };
-
-    const handleSomeoneTyping = (username: string) => {
-      setTypingUser(username);
-      setTimeout(() => setTypingUser(""), 1500);
-    };
-
-    const handleUpdateReaction = ({
-      commentId,
-      emoji,
-    }: {
-      commentId: string | number;
-      emoji: string;
-    }) => {
-      setReactions((prev) => ({
-        ...prev,
-        [commentId]: {
-          ...(prev[commentId] || {}),
-          [emoji]: (prev[commentId]?.[emoji] || 0) + 1,
-        },
-      }));
-    };
-
-    socket.on("receiveComment", handleReceiveComment);
-    socket.on("someoneTyping", handleSomeoneTyping);
-    socket.on("updateReaction", handleUpdateReaction);
-
-    return () => {
-      socket.off("receiveComment", handleReceiveComment);
-      socket.off("someoneTyping", handleSomeoneTyping);
-      socket.off("updateReaction", handleUpdateReaction);
-      socket.disconnect();
-    };
-  }, [post?._id]);
-
-  const handleTyping = () => socket.emit("typing", "You");
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!comment.trim() || !post?._id) return;
-
-    const newComment: Comment = {
-      id: Date.now(),
-      text: comment,
-      author: "You",
-      createdAt: new Date().toISOString(),
-    };
-
-    setComments((prev) => [...prev, newComment]);
-    setComment("");
-    scrollToBottom();
-
-    socket.emit("newComment", newComment);
-    await axios.post(`/api/posts/${post._id}/comments`, newComment);
-  };
-
-  if (loading)
-    return (
-      <p className="text-center mt-10 text-[#7f5539]">Loading post...</p>
-    );
   if (!post)
     return (
-      <p className="text-center mt-10 text-[#7f5539] font-medium">
-        Post not found.
-      </p>
+      <div className="min-h-screen flex items-center justify-center text-[#4e342e]">
+        Loading post...
+      </div>
     );
 
+  // ✅ Share Functions
+  const sharePost = (platform: string) => {
+    const url = window.location.href;
+    const text = encodeURIComponent(post.title);
+
+    switch (platform) {
+      case "twitter":
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
+        break;
+      case "facebook":
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank");
+        break;
+      case "whatsapp":
+        window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, "_blank");
+        break;
+      case "copy":
+        navigator.clipboard.writeText(url);
+        alert("Link copied to clipboard!");
+        break;
+    }
+  };
+
   return (
-    <main className="bg-gradient-to-br from-[#fdf7f0] to-[#f7efe6] min-h-screen flex flex-col items-center py-20 px-4 sm:px-6 lg:px-20">
-      <div className="max-w-3xl w-full flex-1 space-y-4 overflow-y-auto">
-        <div className="bg-white/70 backdrop-blur-md border border-[#e6ccb2]/50 shadow-xl rounded-3xl overflow-hidden">
-          {post.imageUrl && (
-            <div className="relative w-full h-80 overflow-hidden">
+   <main className="bg-gradient-to-br  min-h-screen p-4 md:p-10">
+  <div className="max-w-5xl mx-auto rounded-2xl shadow-md overflow-hidden">
+
+    {/* ✅ Blog Image — only shown if available */}
+    {post.imageUrl && (
+      <div className="relative w-full h-96">
+        <Image
+          src={post.imageUrl}
+          alt={post.title}
+          fill
+          unoptimized
+          priority
+          className="object-cover"
+        />
+      </div>
+    )}
+
+        {/* ✅ Content */}
+        <div className="p-6">
+          <h1 className="text-3xl font-bold text-[#4e342e] mb-2">{post.title}</h1>
+          <p className="text-sm text-gray-500 mb-4">
+            Posted by <span className="font-semibold">{post.authorEmail || "Unknown"}</span> •{" "}
+            {new Date(post.createdAt).toLocaleDateString()}
+          </p>
+
+          {/* ✅ Icons Section */}
+          <div className="flex items-center gap-6 text-gray-600 mb-6">
+            <span className="flex items-center gap-1">
+              <Eye size={18} /> {post.views || 0}
+            </span>
+            <span className="flex items-center gap-1 cursor-pointer hover:text-[#7f5539] transition">
+              <Heart size={18} /> {post.likes || 0}
+            </span>
+            <span
+              className="flex items-center gap-1 cursor-pointer hover:text-[#7f5539] transition"
+              onClick={() => setShowComments(!showComments)}
+            >
+              <MessageCircle size={18} /> {post.comments?.length || 0}
+            </span>
+          </div>
+
+          {/* ✅ Blog Content */}
+          <div
+            className="prose max-w-none text-[#3e2723] leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+
+          {/* ✅ Share Buttons */}
+          <div className="flex flex-wrap gap-4 mt-8 border-t pt-4">
+            <button
+              onClick={() => sharePost("twitter")}
+              className="flex items-center gap-2 bg-[#1DA1F2] text-white px-4 py-2 rounded-xl hover:opacity-90 transition"
+            >
+              <Share2 size={18} /> Twitter
+            </button>
+            <button
+              onClick={() => sharePost("facebook")}
+              className="flex items-center gap-2 bg-[#1877F2] text-white px-4 py-2 rounded-xl hover:opacity-90 transition"
+            >
+              <Share2 size={18} /> Facebook
+            </button>
+            <button
+              onClick={() => sharePost("whatsapp")}
+              className="flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-xl hover:opacity-90 transition"
+            >
+              <Share2 size={18} /> WhatsApp
+            </button>
+            <button
+              onClick={() => sharePost("copy")}
+              className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-xl hover:opacity-90 transition"
+            >
+              <Copy size={18} /> Copy Link
+            </button>
+          </div>
+
+          {/* ✅ Comments Section */}
+          {showComments && (
+            <div className="mt-10 border-t pt-6">
+              <h3 className="text-xl font-semibold text-[#4e342e] mb-4">Comments</h3>
+              {post.comments?.length ? (
+                post.comments.map((c: any, idx: number) => (
+                  <div key={idx} className="mb-3">
+                    <p className="text-[#3e2723]">{c.text}</p>
+                    <p className="text-sm text-gray-500">– {c.author}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No comments yet.</p>
+              )}
+            </div>
+          )}
+
+       {/* ✅ Related Posts */}
+{related.length > 0 && (
+  <div className="mt-10 border-t pt-6">
+    <h3 className="text-xl font-semibold text-[#4e342e] mb-4">
+      Related Posts
+    </h3>
+
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {related.map((r) => (
+        <Link
+          href={`/Blog/${r._id}`}
+          key={r._id}
+          className="border rounded-xl overflow-hidden bg-white shadow-md hover:shadow-lg transition-all duration-300 group"
+        >
+          {/* ✅ Only show image if available */}
+          {r.image && (
+            <div className="relative w-full h-44 bg-gray-100">
               <Image
-                src={post.imageUrl}
-                alt={post.title}
+                src={r.image}
+                alt={r.title}
                 fill
-                className="object-cover transition-transform duration-500 hover:scale-105"
+                unoptimized
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           )}
-          <div className="p-6 space-y-3">
-            <h1 className="text-4xl font-bold text-[#7f5539]">{post.title}</h1>
-            <p className="text-[#5a3825]/95 leading-relaxed whitespace-pre-line">
-              {post.content}
+
+          {/* ✅ Text */}
+          <div className="p-4">
+            <h4 className="font-semibold mb-2 text-[#4e342e] group-hover:text-[#7f5539] transition-colors">
+              {r.title}
+            </h4>
+            <p className="text-sm text-gray-600 line-clamp-3">
+              {r.content?.replace(/<[^>]+>/g, "").slice(0, 120)}...
             </p>
           </div>
-        </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+)}
 
-        <div className="space-y-1">
-          {comments.length > 0 ? (
-            <AnimatePresence>
-              {comments.map((c) => (
-                <motion.div
-                  key={c.id}
-                  layout
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  transition={{ duration: 0.25 }}
-                  className="bg-white/50 backdrop-blur-sm border border-[#e6ccb2]/40 p-3 rounded-2xl shadow-sm hover:shadow-md -mt-1"
-                >
-                  <p className="text-[#5a3825]/90">{c.text}</p>
-                  <p className="text-sm text-gray-600 mt-1 text-right">{c.author}</p>
-                  <div className="flex gap-2 mt-1">
-                    {["❤️", "👍", "😮"].map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() =>
-                          socket.emit("reactComment", { commentId: c.id, emoji })
-                        }
-                        className="text-sm hover:scale-110 transition"
-                      >
-                        {emoji} {reactions[c.id]?.[emoji] || 0}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              ))}
-              <div ref={commentsEndRef} />
-            </AnimatePresence>
-          ) : (
-            <p className="text-gray-500 italic text-center">
-              No comments yet — be the first to share your thoughts!
-            </p>
-          )}
         </div>
       </div>
-
-      <form
-        onSubmit={handleCommentSubmit}
-        className="w-full max-w-3xl mt-4 fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white/80 backdrop-blur-md border border-[#e6ccb2]/50 p-3 rounded-3xl shadow-lg flex gap-2 items-center"
-      >
-        <textarea
-          value={comment}
-          onChange={(e) => {
-            setComment(e.target.value);
-            handleTyping();
-          }}
-          placeholder="Write a comment..."
-          rows={1}
-          className="flex-1 text-gray-800 placeholder:text-gray-500 placeholder:italic border border-[#d6ccc2] rounded-2xl p-2 focus:ring-2 focus:ring-[#9c6644]/60 focus:outline-none resize-none bg-[#fffaf6] shadow-sm"
-        />
-        <button
-          type="submit"
-          className="bg-[#7f5539] text-white py-2 px-4 text-sm rounded-lg font-medium hover:bg-[#9c6644] transition-all duration-150 shadow-sm hover:shadow-md"
-        >
-          Send
-        </button>
-      </form>
-
-      {typingUser && (
-        <p className="fixed bottom-20 left-1/2 transform -translate-x-1/2 text-gray-500 italic text-sm">
-          {typingUser} is typing...
-        </p>
-      )}
     </main>
   );
 }
+
