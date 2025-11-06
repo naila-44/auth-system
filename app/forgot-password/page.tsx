@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
 
     if (!email) {
-      setMsg("⚠️ Please enter your email.");
+      setMsg("Please enter your email.");
       return;
     }
 
@@ -26,14 +26,14 @@ export default function ForgotPasswordPage() {
       });
 
       if (res.ok) {
-        setMsg("✅ Password reset link has been sent to your email.");
+        setMsg("Password reset link has been sent to your email.");
       } else {
         const text = await res.text();
-        setMsg(`❌ ${text}`);
+        setMsg(`${text}`);
       }
     } catch (err) {
       console.error(err);
-      setMsg("⚠️ Something went wrong. Please try again later.");
+      setMsg("Something went wrong. Please try again later.");
     } finally {
       setLoading(false);
     }

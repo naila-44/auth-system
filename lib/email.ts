@@ -1,5 +1,5 @@
 
-// lib/email.ts
+
 import nodemailer, { Transporter } from "nodemailer";
 
 let transporter: Transporter;

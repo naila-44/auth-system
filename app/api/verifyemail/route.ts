@@ -4,7 +4,7 @@ import User from "@/lib/models/User";
 
 export async function POST(req: NextRequest) {
   try {
-    await connect(); // ✅ Correct usage
+    await connect(); 
 
     const reqBody = await req.json();
     const { token } = reqBody;
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       success: true,
     });
   } catch (error: any) {
-    console.error("❌ Error in verify email route:", error.message);
+    console.error("Error in verify email route:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

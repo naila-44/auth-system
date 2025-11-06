@@ -2,236 +2,334 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Bell, ChevronDown, Trash2, Upload } from "lucide-react";
+import Sidebar from "../components/sidebar";
 import {
-  LineChart,
-  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from "recharts";
-import { Bell, Search, ChevronDown } from "lucide-react";
-import Sidebar from "../components/sidebar";
 
-type SummaryStat = { title: string; value: number; color: string; trendColor: string; trend: number[] };
-type Post = { id: string; title: string; date: string; views: number; likes: number };
-type AnalyticsItem = { date: string; posts: number; likes: number };
+type Post = {
+  _id: string;
+  title: string;
+  desc: string;
+  content: string;
+  imageUrl?: string;
+  createdAt: string;
+  published: boolean;
+};
 
 export default function Dashboard() {
-  const router = useRouter();
-
-  const [summaryStats, setSummaryStats] = useState<SummaryStat[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsItem[]>([]);
-  const [recentPosts, setRecentPosts] = useState<Post[]>([]);
-  const [notifications, setNotifications] = useState<string[]>([]);
+  const [user, setUser] = useState<{ name?: string } | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "published" | "draft">("all");
+  const [filterWeek, setFilterWeek] = useState<string | null>(null);
 
-  // Fetch dashboard data
-  useEffect(() => {
-    async function fetchData() {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/dashboard", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.status === 401) {
-          router.push("/login");
-          return;
-        }
-
-        const data = await res.json();
-        setSummaryStats(data.summaryStats || []);
-        setAnalyticsData(data.analyticsData || []);
-        setRecentPosts(data.recentPosts || []);
-        setNotifications(data.notifications || []);
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch("/api/dashboard", { cache: "no-store" });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.posts)) setPosts(data.posts);
+    } catch (err) {
+      console.error("Failed to fetch posts:", err);
     }
-
-    fetchData();
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
   };
 
-  // Safe total calculation
-  const totalPosts = analyticsData.reduce((sum, item) => sum + (item.posts || 0), 0);
-  const totalLikes = analyticsData.reduce((sum, item) => sum + (item.likes || 0), 0);
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-xl text-[#5a4730]">
-        Loading Dashboard...
-      </div>
-    );
-  }
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) fetchPosts();
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+    }
+  };
+
+  const handlePublish = async (id: string) => {
+    try {
+      const res = await fetch("/api/dashboard", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Post published successfully!");
+        fetchPosts();
+      } else {
+        alert(data.error || "Failed to publish post");
+      }
+    } catch (err) {
+      console.error("Failed to publish post:", err);
+    }
+  };
+
+  const totalPosts = posts.length;
+  const publishedCount = posts.filter((p) => p.published).length;
+  const draftCount = totalPosts - publishedCount;
+
+  const chartData = [
+    { name: "Published", value: publishedCount },
+    { name: "Draft", value: draftCount },
+  ];
+  const COLORS = ["#A47551", "#D9BCA3"];
+
+  const getWeekLabel = (date: Date) => {
+    const firstDayOfWeek = new Date(date);
+    firstDayOfWeek.setDate(date.getDate() - date.getDay());
+    return firstDayOfWeek.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const weekCounts: { [week: string]: number } = {};
+  posts.forEach((post) => {
+    const weekLabel = getWeekLabel(new Date(post.createdAt));
+    weekCounts[weekLabel] = (weekCounts[weekLabel] || 0) + 1;
+  });
+
+  const barData = Object.keys(weekCounts)
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+    .map((week) => ({ week, posts: weekCounts[week] }));
+
+  const filteredPosts = posts.filter((post) => {
+    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType =
+      filterType === "all"
+        ? true
+        : filterType === "published"
+        ? post.published
+        : !post.published;
+    const matchesWeek = filterWeek ? getWeekLabel(new Date(post.createdAt)) === filterWeek : true;
+    return matchesSearch && matchesType && matchesWeek;
+  });
 
   return (
-    <main className="bg-[#f8f5f2] min-h-screen">
-      {/* Header */}
-      <header className="flex justify-between items-center bg-gradient-to-r from-[#e8d8c3] to-[#d9bfa6] p-4 shadow sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-[#5a4730]">Wisply Dashboard</h1>
+    <main className="bg-gradient-to-br from-[#fdf7f0] to-[#f7efe6] min-h-screen">
+     
+      <header className="flex justify-between items-center bg-gradient-to-r from-[#e8d8c3]/80 to-[#d9bfa6]/80 p-4 shadow-md sticky top-0 z-50 backdrop-blur-sm rounded-b-lg">
+        <h1 className="text-2xl font-bold text-[#7f5539]">Dashboard</h1>
+        <div className="flex items-center gap-4 relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search posts..."
+            className="pl-3 pr-3 py-1 rounded-lg border border-[#d6ccc2] focus:outline-none focus:ring-2 focus:ring-[#9c6644]/60 text-sm text-gray-700"
+          />
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="hover:bg-[#f5e9dc]/70 p-2 rounded-full transition"
+          >
+            <Bell size={20} className="text-[#7f5539]" />
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 mt-12 w-64 bg-white/60 backdrop-blur-md shadow-lg rounded-lg p-3 text-sm">
+              No new notifications
+            </div>
+          )}
           <div className="relative">
-            <input
-              type="text"
-              placeholder="Search posts..."
-              className="border rounded px-3 py-1 pl-8 focus:outline-none focus:ring-2 focus:ring-[#c9ac8b]"
-            />
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {/* Notifications */}
-          <div className="relative">
-            <button onClick={() => setShowNotifications(!showNotifications)}>
-              <Bell size={20} className="text-[#5a4730]" />
-            </button>
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-64 bg-white shadow rounded p-2 z-50">
-                <h4 className="font-semibold mb-2 text-[#5a4730]">Notifications</h4>
-                {notifications.map((note, idx) => (
-                  <p key={idx} className="text-sm border-b last:border-b-0 py-1 text-[#5a4730]">
-                    {note}
-                  </p>
-                ))}
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-2 bg-[#f5e9dc]/80 px-2 py-1 rounded-full hover:shadow-sm transition"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#7f5539] flex items-center justify-center text-white font-bold">
+                {user?.name?.charAt(0).toUpperCase() || "N"}
               </div>
-            )}
-          </div>
-
-          {/* Profile menu */}
-          <div className="relative">
-            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-[#c9ac8b] flex items-center justify-center text-white font-bold">
-                P
-              </div>
-              <ChevronDown size={16} className="text-[#5a4730]" />
+              <ChevronDown size={16} color="#7f5539" />
             </button>
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-40 bg-white shadow rounded p-2 z-50">
-                <Link href="/profile" className="block py-1 px-2 hover:bg-[#f0e6d8] rounded text-[#5a4730]">
+              <div className="absolute right-0 mt-2 w-40 bg-white/60 backdrop-blur-md shadow-md rounded-lg p-2 text-[#7f5539]">
+                <Link href="/profile" className="block py-1 px-2 hover:bg-[#f5e9dc]/70 rounded">
                   Profile
                 </Link>
-                <Link href="/settings" className="block py-1 px-2 hover:bg-[#f0e6d8] rounded text-[#5a4730]">
+                <Link href="/settings" className="block py-1 px-2 hover:bg-[#f5e9dc]/70 rounded">
                   Settings
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left py-1 px-2 hover:bg-[#f0e6d8] rounded text-[#5a4730]"
-                >
-                  Logout
-                </button>
               </div>
             )}
           </div>
-
           <Link
-            href="/new-post"
-            className="bg-[#c9ac8b] text-white px-4 py-2 rounded hover:bg-[#d9bfa6] transition"
+            href="/dashboard/new-post"
+            className="bg-[#7f5539] text-white px-3 py-2 rounded-lg hover:bg-[#9c6644] transition-all shadow-sm hover:shadow-md"
           >
-            New Post
+            + New Post
           </Link>
         </div>
       </header>
 
-      {/* Dashboard layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
-        {/* Sidebar */}
-        <aside className="lg:col-span-1 h-[calc(100vh-64px)] overflow-y-auto sticky top-[64px]">
+        <aside className="lg:col-span-1 h-fit sticky top-[90px]">
           <Sidebar />
         </aside>
 
-        {/* Main content */}
         <section className="lg:col-span-3 space-y-8">
-          {/* Analytics chart */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-2xl font-semibold mb-4 text-[#5a4730]">Analytics</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analyticsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" stroke="#5a4730" />
-                <YAxis stroke="#5a4730" />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="posts" stroke="#c9ac8b" activeDot={{ r: 8 }} />
-                <Line type="monotone" dataKey="likes" stroke="#d9bfa6" />
-              </LineChart>
-            </ResponsiveContainer>
-
-            {/* Total posts & likes */}
-            <div className="flex gap-6 mt-6">
-              <div className="flex-1 bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center border border-[#e8d8c3]">
-                <h3 className="text-sm text-gray-500 uppercase">Total Posts</h3>
-                <p className="text-3xl font-bold text-[#c9ac8b] mt-2">{totalPosts}</p>
-              </div>
-              <div className="flex-1 bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center border border-[#d9bfa6]">
-                <h3 className="text-sm text-gray-500 uppercase">Total Likes</h3>
-                <p className="text-3xl font-bold text-[#d9bfa6] mt-2">{totalLikes}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent posts */}
-          <div>
-            <h2 className="text-2xl font-semibold mb-4 text-[#5a4730]">Recent Posts</h2>
-            <div className="space-y-4">
-              {recentPosts.map((post) => (
-                <div key={post.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
-                  <div>
-                    <h3 className="font-medium text-lg text-[#5a4730]">{post.title}</h3>
-                    <p className="text-gray-500 text-sm">
-                      {post.date} | {post.views} views | {post.likes} likes
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Link href={`/posts/${post.id}`} className="text-[#c9ac8b] hover:underline">
-                      View
-                    </Link>
-                    <Link href={`/edit-post/${post.id}`} className="text-[#d9bfa6] hover:underline">
-                      Edit
-                    </Link>
-                  </div>
+      
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[{ label: "Total Posts", value: totalPosts }, { label: "Published", value: publishedCount }, { label: "Drafts", value: draftCount }].map(
+              (stat, i) => (
+                <div
+                  key={i}
+                  className="bg-white/60 backdrop-blur-md border border-[#f0e6d8] p-4 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition text-center"
+                >
+                  <h3 className="text-gray-600 text-sm font-medium">{stat.label}</h3>
+                  <p className="text-3xl font-bold text-[#7f5539] mt-1">{stat.value}</p>
                 </div>
-              ))}
+              )
+            )}
+          </div>
+
+         
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+       
+            <div className="bg-white/60 backdrop-blur-md border border-[#f0e6d8] p-4 rounded-xl shadow-md">
+              <h3 className="text-[#7f5539] font-semibold text-lg mb-2 text-center">Posts Overview</h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                    onClick={(entry) =>
+                      setFilterType(entry?.name.toLowerCase() as "published" | "draft")
+                    }
+                    cursor="pointer"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+              {filterType !== "all" && (
+                <button
+                  onClick={() => setFilterType("all")}
+                  className="mt-2 text-sm text-[#7f5539] underline hover:text-[#5b3b2a]"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white/60 backdrop-blur-md border border-[#f0e6d8] p-4 rounded-xl shadow-md">
+              <h3 className="text-[#7f5539] font-semibold text-lg mb-2 text-center">Weekly Posts</h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={barData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }} barCategoryGap="20%">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="week" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                <Bar
+  dataKey="posts"
+  fill="#A47551"
+  cursor="pointer"
+  onClick={(data: any) => {
+    if (data && data.payload && data.payload.week) {
+      setFilterWeek(data.payload.week);
+    }
+  }}
+/>
+
+                </BarChart>
+              </ResponsiveContainer>
+              {filterWeek && (
+                <button
+                  onClick={() => setFilterWeek(null)}
+                  className="mt-2 text-sm text-[#7f5539] underline hover:text-[#5b3b2a]"
+                >
+                  Clear Week Filter
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Trending posts */}
+       
           <div>
-            <h2 className="text-2xl font-semibold mb-4 text-[#5a4730]">Trending Posts</h2>
-            <div className="space-y-4">
-              {recentPosts
-                .sort((a, b) => b.likes - a.likes)
-                .slice(0, 3)
-                .map((post) => (
-                  <div key={post.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
+            <h2 className="text-2xl font-semibold text-[#7f5539] mb-4">Recent Posts</h2>
+            <div className="space-y-3">
+              {filteredPosts.length > 0 ? (
+                filteredPosts.map((post) => (
+                  <div
+                    key={post._id}
+                    className="bg-white/60 backdrop-blur-md border border-[#f0e6d8] p-4 rounded-xl shadow-md flex justify-between items-center hover:shadow-lg hover:-translate-y-1 transition"
+                  >
                     <div>
-                      <h3 className="font-medium text-lg text-[#5a4730]">{post.title}</h3>
-                      <p className="text-gray-500 text-sm">
-                        {post.date} | {post.views} views | {post.likes} likes
+                      <h3 className="font-semibold text-[#7f5539] text-lg">{post.title}</h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(post.createdAt).toLocaleDateString()} — {post.published ? "Published" : "Draft"}
                       </p>
                     </div>
-                    <Link href={`/posts/${post.id}`} className="text-[#c9ac8b] hover:underline">
-                      View
-                    </Link>
+                    <div className="flex gap-3 items-center">
+                      <Link href={`/posts/${post._id}`} className="text-[#c9ac8b] hover:underline">
+                        View
+                      </Link>
+                      <Link href={`/dashboard/edit-post/${post._id}`} className="text-[#b3916f] hover:underline">
+                        Edit
+                      </Link>
+                      {!post.published && (
+                        <button
+                          onClick={() => handlePublish(post._id)}
+                          className="text-[#7f5539] hover:text-[#5b3b2a] transition flex items-center gap-1"
+                        >
+                          <Upload size={18} /> Publish
+                        </button>
+                      )}
+                      <button onClick={() => handleDelete(post._id)} className="text-[#e07b7b] hover:text-red-600 transition">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-4">No posts found.</p>
+              )}
+            </div>
+          </div>
+
+         
+          <div>
+            <h2 className="text-2xl font-semibold text-[#7f5539] mb-4">Recent Articles</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {posts
+                .filter((post) => post.published)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
+                .map((post) => (
+                  <Link
+                    key={post._id}
+                    href={`/posts/${post._id}`}
+                    className="block bg-white/60 backdrop-blur-md border border-[#f0e6d8] rounded-xl shadow-md p-4 hover:shadow-lg hover:-translate-y-1 transition"
+                  >
+                    {post.imageUrl && <img src={post.imageUrl} alt={post.title} className="w-full h-32 object-cover rounded-lg mb-2" />}
+                    <h3 className="text-[#7f5539] font-semibold text-lg">{post.title}</h3>
+                    <p className="text-sm text-gray-500 mb-2">{new Date(post.createdAt).toLocaleDateString()}</p>
+                    <p className="text-[#c9ac8b] text-sm">Read More →</p>
+                  </Link>
                 ))}
             </div>
           </div>

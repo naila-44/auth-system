@@ -4,27 +4,27 @@ import bcrypt from "bcryptjs";
 
 export const sendMail = async ({ email, emailType, userId }: any) => {
   try {
-    // Generate a token (hashed userId)
+    
     const hashedToken = await bcrypt.hash(userId.toString(), 10);
 
     if (emailType === "VERIFY") {
       await User.findByIdAndUpdate(userId, {
         verifyToken: hashedToken,
-        verifyTokenExpiry: Date.now() + 3600000, // 1 hour
+        verifyTokenExpiry: Date.now() + 3600000, 
       });
     } else if (emailType === "RESET") {
       await User.findByIdAndUpdate(userId, {
         forgotPasswordToken: hashedToken,
-        forgotPasswordTokenExpiry: Date.now() + 3600000, // 1 hour
+        forgotPasswordTokenExpiry: Date.now() + 3600000, 
       });
     }
 
-    // Create email transporter (using Gmail)
+   
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER, // your Gmail
-        pass: process.env.EMAIL_PASS, // your Gmail App Password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS, 
       },
     });
 

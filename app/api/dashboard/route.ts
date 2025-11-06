@@ -1,36 +1,41 @@
+
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { connect } from "@/lib/db";
-import User from "@/lib/models/User";
+import Post from "@/lib/models/Post";
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret123";
-
-export async function GET(req: Request) {
+export async function GET() {
   try {
     await connect();
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    // Sample dashboard data
-    const data = {
-      name: user.name,
-      summaryStats: [
-        { title: "Total Posts", value: 24 },
-        { title: "Total Likes", value: 78 },
-      ],
-    };
-
-    return NextResponse.json(data);
+    const posts = await Post.find().sort({ createdAt: -1 });
+    return NextResponse.json({ success: true, posts });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.error("Error fetching posts:", err);
+    return NextResponse.json({ success: false, error: "Failed to fetch posts" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    await connect();
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Post ID required" }, { status: 400 });
+    }
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      id,
+      { published: true },
+      { new: true }
+    );
+
+    if (!updatedPost) {
+      return NextResponse.json({ success: false, error: "Post not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, post: updatedPost });
+  } catch (err) {
+    console.error("Error publishing post:", err);
+    return NextResponse.json({ success: false, error: "Failed to publish post" }, { status: 500 });
   }
 }

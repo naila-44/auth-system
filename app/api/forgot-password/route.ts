@@ -1,11 +1,9 @@
-// /app/api/forgot-password/route.ts
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { connect } from "@/lib/db";
 import User from "@/lib/models/User";
 import nodemailer from "nodemailer";
-
 export async function POST(req: Request) {
   try {
     await connect();
@@ -20,13 +18,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Generate reset token and expiry
+   
     const resetToken = crypto.randomBytes(32).toString("hex");
     user.resetToken = resetToken;
-    user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); 
     await user.save();
-
-    // Send reset email
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
@@ -41,7 +37,7 @@ export async function POST(req: Request) {
       from: process.env.SENDER_EMAIL,
       to: user.email,
       subject: "Reset Your Password",
-      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. Link valid for 1 hour.</p>`,
+      html: `Click  href="${resetUrl}" to reset your password. Link valid for 1 hour.`,
     });
 
     return NextResponse.json({ message: "Password reset email sent" });

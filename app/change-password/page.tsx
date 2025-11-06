@@ -1,4 +1,4 @@
-// app/profile/change-password/page.tsx
+
 "use client";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -16,9 +16,9 @@ export default function ChangePasswordPage() {
       body: JSON.stringify(form),
     });
     const data = await res.json();
-    if (!res.ok) setMsg(data.error || "❌ Failed to change password");
+    if (!res.ok) setMsg(data.error || "Failed to change password");
     else {
-      setMsg("✅ Password changed successfully");
+      setMsg("Password changed successfully");
       setTimeout(() => router.push("/dashboard"), 1500);
     }
   }
@@ -34,7 +34,6 @@ export default function ChangePasswordPage() {
         justifyContent: "center",
       }}
     >
-      {/* Wrapper */}
       <div
         style={{
           width: "500px",
@@ -43,7 +42,6 @@ export default function ChangePasswordPage() {
           padding: "10px",
         }}
       >
-        {/* Main Card */}
         <div
           style={{
             width: "250px",
@@ -54,7 +52,7 @@ export default function ChangePasswordPage() {
             borderRadius: "6px",
           }}
         >
-          {/* Header */}
+         
           <div style={{ marginBottom: "20px", textAlign: "center" }}>
             <h1
               style={{
@@ -66,8 +64,6 @@ export default function ChangePasswordPage() {
               Change Password
             </h1>
           </div>
-
-          {/* Current Password */}
           <input
             type="password"
             placeholder="Current Password"
@@ -84,8 +80,6 @@ export default function ChangePasswordPage() {
               boxSizing: "border-box",
             }}
           />
-
-          {/* New Password */}
           <input
             type="password"
             placeholder="New Password"
@@ -102,8 +96,6 @@ export default function ChangePasswordPage() {
               boxSizing: "border-box",
             }}
           />
-
-          {/* Button */}
           <input
             type="submit"
             value="Change Password"
@@ -119,8 +111,6 @@ export default function ChangePasswordPage() {
               borderRadius: "3px",
             }}
           />
-
-          {/* Message */}
           {msg && (
             <p
               style={{

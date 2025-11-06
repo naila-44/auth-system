@@ -17,11 +17,11 @@ export default function ResetPasswordPage() {
     e.preventDefault();
 
     if (!password || !confirm) {
-      setMsg("⚠️ Please fill in both fields.");
+      setMsg("Please fill in both fields.");
       return;
     }
     if (password !== confirm) {
-      setMsg("❌ Passwords do not match.");
+      setMsg(" Passwords do not match.");
       return;
     }
 
@@ -37,8 +37,6 @@ export default function ResetPasswordPage() {
 
       if (res.ok) {
         setMsg("✅ Your password has been successfully reset. Redirecting to login...");
-
-        // Short delay before redirect
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -47,11 +45,11 @@ export default function ResetPasswordPage() {
         setConfirm("");
       } else {
         const data = await res.json();
-        setMsg(`❌ ${data.error || "Something went wrong"}`);
+        setMsg(`${data.error || "Something went wrong"}`);
       }
     } catch (err) {
       console.error(err);
-      setMsg("⚠️ Something went wrong. Please try again later.");
+      setMsg("Something went wrong. Please try again later.");
     } finally {
       setLoading(false);
     }

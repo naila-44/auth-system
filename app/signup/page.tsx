@@ -2,48 +2,56 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   const [form, setForm] = useState({
-    username: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSignup(e: FormEvent) {
     e.preventDefault();
     setMsg(null);
 
-    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
-      setMsg("⚠️ Please fill in all fields.");
+    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+      setMsg("Please fill in all fields.");
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      setMsg("❌ Passwords do not match.");
+      setMsg("Passwords do not match.");
       return;
     }
 
     if (form.password.length < 8) {
-      setMsg("⚠️ Password must be at least 8 characters long.");
+      setMsg("Password must be at least 8 characters long.");
       return;
     }
 
     try {
       setLoading(true);
-      const res = await fetch("/api/sign-up", {
+      const res = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       const data = await res.json();
-      setMsg(data.message || data.error);
+
+      if (res.status === 201) {
+        setMsg(data.message);
+        router.push("/login"); 
+      } else {
+        setMsg(data.error || "Something went wrong!");
+      }
     } catch {
-      setMsg("⚠️ Something went wrong!");
+      setMsg("Something went wrong!");
     } finally {
       setLoading(false);
     }
@@ -52,7 +60,7 @@ export default function SignupPage() {
   return (
     <div
       style={{
-        backgroundColor: "#ede0d4", // nude background
+        backgroundColor: "#ede0d4",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
@@ -61,14 +69,16 @@ export default function SignupPage() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <div
-        style={{
-          width: "500px",
-          margin: "20px auto",
-          padding: "10px",
-        }}
-      >
-        {/* Main Signup Form */}
+      <style jsx>{`
+        input::placeholder {
+          color: #333;
+        }
+        input {
+          color: #000;
+        }
+      `}</style>
+
+      <div style={{ width: "500px", margin: "20px auto", padding: "10px" }}>
         <form
           onSubmit={handleSignup}
           style={{
@@ -93,43 +103,41 @@ export default function SignupPage() {
             </h1>
           </div>
 
-          {/* Username */}
           <input
             type="text"
-            placeholder="Username"
-            value={form.username}
-            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            placeholder="Full Name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
             style={inputStyle}
+            required
           />
-
-          {/* Email */}
           <input
             type="email"
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             style={inputStyle}
+            required
           />
-
-          {/* Password */}
           <input
             type="password"
             placeholder="Password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             style={inputStyle}
+            required
           />
-
-          {/* Confirm Password */}
           <input
             type="password"
             placeholder="Confirm Password"
             value={form.confirmPassword}
-            onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, confirmPassword: e.target.value })
+            }
             style={inputStyle}
+            required
           />
 
-          {/* Sign Up Button */}
           <button
             type="submit"
             disabled={loading}
@@ -155,7 +163,6 @@ export default function SignupPage() {
             {loading ? "Signing Up..." : "Sign Up"}
           </button>
 
-          {/* Message */}
           {msg && (
             <p
               style={{
@@ -170,7 +177,6 @@ export default function SignupPage() {
           )}
         </form>
 
-        {/* Sub Content */}
         <div
           style={{
             width: "350px",
@@ -210,4 +216,5 @@ const inputStyle = {
   borderRadius: "6px",
   boxSizing: "border-box" as const,
   outlineColor: "#7f5539",
+  backgroundColor: "#fff",
 };

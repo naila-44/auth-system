@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { connect } from "@/lib/db";
 import User from "@/lib/models/User";
-
-const JWT_SECRET = process.env.JWT_SECRET || "secret123";
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +9,7 @@ export async function POST(req: Request) {
     const { email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
     const user = await User.findOne({ email });
@@ -21,9 +18,15 @@ export async function POST(req: Request) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1d" });
+  
+    const response = NextResponse.json({ success: true, user: { name: user.name, email: user.email } });
+    response.cookies.set("user_session", JSON.stringify({ id: user._id, email: user.email }), {
+      httpOnly: true,
+      path: "/",
+      maxAge: 60 * 60 * 24, 
+    });
 
-    return NextResponse.json({ token, name: user.name });
+    return response;
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

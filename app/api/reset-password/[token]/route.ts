@@ -1,4 +1,4 @@
-// app/api/reset-password/[token]/route.ts
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connect } from "@/lib/db";
@@ -6,12 +6,12 @@ import User from "@/lib/models/User";
 
 export async function POST(
   req: Request,
-  { params }: { params: { token: string } } // ✅ Destructure params here
+  { params }: { params: { token: string } } 
 ) {
   try {
     await connect();
 
-    const { token } = params; // ✅ token is available now
+    const { token } = params; 
     const { password } = await req.json();
 
     if (!password) {

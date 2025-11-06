@@ -2,13 +2,13 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // ✅ import router
+import { useRouter } from "next/navigation"; 
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter(); // ✅ initialize router
+  const router = useRouter();
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -16,7 +16,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -26,15 +26,15 @@ export default function LoginPage() {
 
       if (res.ok) {
         setMsg("✅ Login successful! Redirecting...");
-        // ✅ redirect to dashboard after 0.5s
+       
         setTimeout(() => {
           router.push("/dashboard");
         }, 500);
       } else {
-        setMsg(data.message || data.error || "⚠️ Login failed!");
+        setMsg(data.message || data.error || "Login failed!");
       }
     } catch {
-      setMsg("⚠️ Something went wrong!");
+      setMsg("Something went wrong!");
     } finally {
       setLoading(false);
     }
