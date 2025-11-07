@@ -82,7 +82,7 @@ export default function BlogDetailPage() {
         <div className="p-6">
           <h1 className="text-3xl font-bold text-[#4e342e] mb-2">{post.title}</h1>
           <p className="text-sm text-gray-500 mb-4">
-            Posted by <span className="font-semibold">{post.authorEmail || "Unknown"}</span> •{" "}
+            Posted by <span className="font-semibold">{post.authorEmail || "user"}</span> •{" "}
             {new Date(post.createdAt).toLocaleDateString()}
           </p>
 

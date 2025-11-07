@@ -1,41 +1,18 @@
-import ms from "ms";
-import jwt, { Secret, SignOptions } from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import { NextRequest } from "next/server";
+import { verifyToken, JwtPayload } from "./jwt"; // adjust path if needed
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN: ms.StringValue = (process.env.JWT_EXPIRES_IN as ms.StringValue) || "7d"; 
-const SALT_ROUNDS = 12;
-
-export interface JwtPayload {
-  sub: string;
-  email?: string;
-}
-
-
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
-}
-
-
-export async function comparePassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
-
-export function signToken(payload: JwtPayload): Promise<string> {
-  const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
-  return new Promise((resolve, reject) => {
-    jwt.sign(payload, JWT_SECRET, options, (err, token) => {
-      if (err || !token) return reject(err);
-      resolve(token);
-    });
-  });
-}
-
-export function verifyToken(token: string): JwtPayload | null {
+export async function getUserFromToken(req: NextRequest | Request): Promise<JwtPayload | null> {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
-  } catch {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) return null;
+
+    const token = authHeader.split(" ")[1]; // Bearer <token>
+    if (!token) return null;
+
+    const user = verifyToken(token);
+    return user;
+  } catch (err) {
+    console.error("Error verifying token:", err);
     return null;
   }
 }

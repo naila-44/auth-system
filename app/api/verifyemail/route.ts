@@ -6,8 +6,13 @@ export async function POST(req: NextRequest) {
   try {
     await connect(); 
 
-    const reqBody = await req.json();
+    const reqBody: { token?: string } = await req.json();
     const { token } = reqBody;
+
+    if (!token) {
+      return NextResponse.json({ error: "Token is required" }, { status: 400 });
+    }
+
     const currentTime = new Date();
 
     const user = await User.findOne({

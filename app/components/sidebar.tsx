@@ -17,7 +17,7 @@ export default function Sidebar() {
 
   const navLinks = [
     { name: "Home", href: "/", icon: <Home size={18} /> },
-    { name: "My Posts", href: "/posts", icon: <FileText size={18} /> },
+    { name: "My Posts", href: "/dashboard/posts", icon: <FileText size={18} /> },
     { name: "Analytics", href: "/analytics", icon: <BarChart2 size={18} /> },
   ];
 
@@ -29,8 +29,8 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`bg-white border-r shadow-sm transition-all duration-300 h-screen flex flex-col justify-between ${
-        collapsed ? "w-16" : "w-40"
+      className={`bg-white border-r shadow-sm transition-all duration-300 h-screen flex flex-col justify-between border-amber-50 ${
+        collapsed ? "w-16" : "w-50"
       }`}
     >
       <div className="p-4">

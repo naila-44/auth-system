@@ -95,7 +95,7 @@ export default function PostsPage() {
                 {/* Card Content */}
                 <div
                   className="cursor-pointer relative z-10"
-                  onClick={() => router.push(`/posts/${post._id}`)}
+                  onClick={() => router.push(`/dashboard/posts/${post._id}`)}
                 >
                   {post.imageUrl && (
                     <div className="w-full h-48 relative mb-3 rounded-xl overflow-hidden">
