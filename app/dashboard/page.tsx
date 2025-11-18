@@ -37,22 +37,26 @@ export default function DashboardPage() {
   const [filterType, setFilterType] = useState<"all" | "published" | "draft">("all");
   const [filterWeek, setFilterWeek] = useState<string | null>(null);
 
-  // 🔹 Check authentication
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (data.success && data.user) setUser(data.user);
-        else router.push("/login");
-      } catch {
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        setUser(data.user);
+      } else {
         router.push("/login");
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchUser();
-  }, [router]);
+    } catch (err) {
+      router.push("/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUser();
+}, [router]);
 
   // 🔹 Fetch posts
   const fetchPosts = async () => {

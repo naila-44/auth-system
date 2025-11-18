@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, FormEvent } from "react";
 
 export default function ForgotPasswordPage() {
@@ -7,33 +6,21 @@ export default function ForgotPasswordPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleForgotPassword(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-
-    if (!email) {
-      setMsg("Please enter your email.");
-      return;
-    }
+    setMsg(null);
 
     try {
       setLoading(true);
-      setMsg(null);
-
       const res = await fetch("/api/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
-      if (res.ok) {
-        setMsg("Password reset link has been sent to your email.");
-      } else {
-        const text = await res.text();
-        setMsg(`${text}`);
-      }
-    } catch (err) {
-      console.error(err);
-      setMsg("Something went wrong. Please try again later.");
+      const data = await res.json();
+      setMsg(data.message || data.error);
+    } catch {
+      setMsg("Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -49,7 +36,7 @@ export default function ForgotPasswordPage() {
           Enter your registered email to reset your password.
         </p>
 
-        <form onSubmit={handleForgotPassword} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
             placeholder="Enter your email"

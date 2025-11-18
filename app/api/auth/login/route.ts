@@ -18,12 +18,15 @@ export async function POST(req: Request) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
-  
-    const response = NextResponse.json({ success: true, user: { name: user.name, email: user.email } });
+    const response = NextResponse.json({
+      success: true,
+      user: { id: user._id, name: user.name, email: user.email },
+    });
+
     response.cookies.set("user_session", JSON.stringify({ id: user._id, email: user.email }), {
       httpOnly: true,
       path: "/",
-      maxAge: 60 * 60 * 24, 
+      maxAge: 60 * 60 * 24, // 1 day
     });
 
     return response;

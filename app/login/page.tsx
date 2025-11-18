@@ -2,7 +2,8 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -13,31 +14,22 @@ export default function LoginPage() {
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
     setMsg(null);
+    setLoading(true);
 
-    try {
-      setLoading(true);
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+    const res = await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setMsg("✅ Login successful! Redirecting...");
-       
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 500);
-      } else {
-        setMsg(data.message || data.error || "Login failed!");
-      }
-    } catch {
-      setMsg("Something went wrong!");
-    } finally {
+    if (res?.error) {
+      setMsg("Invalid email or password");
       setLoading(false);
+      return;
     }
+
+    setMsg("✅ Login successful! Redirecting...");
+    setTimeout(() => router.push("/dashboard"), 500);
   }
 
   return (

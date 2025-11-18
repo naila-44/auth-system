@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -21,7 +22,7 @@ export default function ResetPasswordPage() {
       return;
     }
     if (password !== confirm) {
-      setMsg(" Passwords do not match.");
+      setMsg("Passwords do not match.");
       return;
     }
 
@@ -35,21 +36,16 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({ password }),
       });
 
+      const data = await res.json();
       if (res.ok) {
-        setMsg("✅ Your password has been successfully reset. Redirecting to login...");
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
-
-        setPassword("");
-        setConfirm("");
+        setMsg("✅ Password reset successfully. Redirecting to login...");
+        setTimeout(() => router.push("/login"), 2000);
       } else {
-        const data = await res.json();
-        setMsg(`${data.error || "Something went wrong"}`);
+        setMsg(data.error || "Something went wrong");
       }
     } catch (err) {
       console.error(err);
-      setMsg("Something went wrong. Please try again later.");
+      setMsg("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
