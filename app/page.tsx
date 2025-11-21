@@ -39,9 +39,9 @@ export default function HomePage() {
     <main className="bg-[#f8f5f2] min-h-screen scroll-smooth font-sans">
       <Navbar />
 
-      {/* Hero Section */}
+     
       <section
-        className="relative text-center py-48 px-6 flex flex-col items-center justify-center bg-cover bg-center"
+        className="relative text-center py-48 px-6 flex flex-col items-center justify-center bg-cover bg-center mt-4 "
         style={{ backgroundImage: "url('/hero.png')" }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-[#f8f5f2]/30 via-[#f8f5f2]/60 to-[#f8f5f2]/80 backdrop-blur-[2px]" />
@@ -74,7 +74,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="#blogs"
-              className="border-2 border-[#7f5539] text-[#7f5539] px-8 py-3 rounded-full font-semibold hover:bg-[#7f5539] hover:text-white hover:shadow-md transition duration-300"
+              className="border-2 border-[#7f5539] text-[#7f5539] px-5 py-3 rounded-full font-semibold hover:bg-[#7f5539] hover:text-white hover:shadow-md transition duration-200 "
             >
               Explore Stories
             </Link>
@@ -82,9 +82,9 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* Featured Stories */}
-      <section id="blogs" className="max-w-6xl mx-auto py-24 px-6">
-        <h2 className="text-4xl font-bold text-[#7f5539] mb-12 text-center">
+      
+      <section id="blogs" className="max-w-6xl mx-auto py-24 px-6 mt-0">
+        <h2 className="text-4xl font-bold text-[#7f5539] mb-4 text-center">
           Featured <span className="text-[#9c6644]">Stories</span>
         </h2>
 
@@ -130,8 +130,6 @@ export default function HomePage() {
           </div>
         )}
       </section>
-
-      {/* Subscribe Section */}
       <motion.section
         className="py-24 bg-[#e6ccb2]/20 text-center rounded-t-[2rem]"
         initial={{ opacity: 0, y: 60 }}

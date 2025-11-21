@@ -76,18 +76,20 @@ export default function BlogPage() {
                   className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={(e) => e.stopPropagation()} // prevent card click
                 >
-                  <button
-                    onClick={() => router.push(`/dashboard/edit-post/${post._id}`)}
-                    className="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(post._id)}
-                    className="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600 transition"
-                  >
-                    Delete
-                  </button>
+                 <button
+  onClick={() => router.push(`/dashboard/edit-post/${post._id}`)}
+  className="bg-[#3e2723] text-white px-3 py-1 text-xs rounded-full hover: transition shadow-sm"
+>
+  Edit
+</button>
+
+<button
+  onClick={() => handleDelete(post._id)}
+  className="bg-[#7f5539] text-white px-3 py-1 text-xs rounded-full hover:bg-amber-800 transition shadow-sm"
+>
+  Delete
+</button>
+
                 </div>
 
                 {/* Post image */}

@@ -72,27 +72,27 @@ export default function PostsPage() {
                 key={post._id}
                 className="relative bg-white rounded-2xl shadow p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200"
               >
-                {/* Edit & Delete buttons on top-right above everything */}
+              
                 <div
                   className="absolute top-3 right-3 flex gap-2 z-20"
-                  onClick={(e) => e.stopPropagation()} // prevent card click
+                  onClick={(e) => e.stopPropagation()} 
                 >
                   <button
                   onClick={() => router.push(`/dashboard/edit-post/${post._id}`)}
 
-                    className="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition z-20"
+                    className="bg-[#3e2723] text-white px-2 py-1 text-xs rounded hover:bg-amber-800 transition z-20"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(post._id)}
-                    className="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600 transition z-20"
+                    className="bg-[#7f5539] text-white px-2 py-1 text-xs rounded hover:bg-amber-800 transition z-20"
                   >
                     Delete
                   </button>
                 </div>
 
-                {/* Card Content */}
+              
                 <div
                   className="cursor-pointer relative z-10"
                   onClick={() => router.push(`/dashboard/posts/${post._id}`)}

@@ -14,7 +14,7 @@ export default function SettingPage() {
   };
 
   return (
-    <div className="ml-64 p-8">
+    <div className="ml-64 p-8 mt-10">
       <h1 className="text-2xl font-semibold text-[#5a4730] mb-6">Settings</h1>
       <div className="bg-white p-6 rounded-xl border shadow w-1/2">
         <label className="block mb-3">

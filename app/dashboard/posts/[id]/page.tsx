@@ -12,7 +12,7 @@ export default function BlogDetailPage() {
   const [related, setRelated] = useState<any[]>([]);
   const [showComments, setShowComments] = useState(false);
 
-  // ✅ Fetch Post and Related
+ 
   useEffect(() => {
     if (!id) return;
     const fetchPostData = async () => {
@@ -38,7 +38,7 @@ export default function BlogDetailPage() {
       </div>
     );
 
-  // ✅ Share Functions
+
   const sharePost = (platform: string) => {
     const url = window.location.href;
     const text = encodeURIComponent(post.title);
@@ -62,11 +62,10 @@ export default function BlogDetailPage() {
 
   return (
    <main className="bg-gradient-to-br  min-h-screen p-4 md:p-10">
-  <div className="max-w-5xl mx-auto rounded-2xl shadow-md overflow-hidden">
+  <div className="max-w-5xl mx-auto rounded-2xl shadow-md overflow-hidden mt-8">
 
-    {/* ✅ Blog Image — only shown if available */}
     {post.imageUrl && (
-      <div className="relative w-full h-96">
+      <div className="relative w-full h-80">
         <Image
           src={post.imageUrl}
           alt={post.title}
@@ -78,16 +77,16 @@ export default function BlogDetailPage() {
       </div>
     )}
 
-        {/* ✅ Content */}
+        
         <div className="p-6">
           <h1 className="text-3xl font-bold text-[#4e342e] mb-2">{post.title}</h1>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 mb-2">
             Posted by <span className="font-semibold">{post.authorEmail || "user"}</span> •{" "}
             {new Date(post.createdAt).toLocaleDateString()}
           </p>
 
-          {/* ✅ Icons Section */}
-          <div className="flex items-center gap-6 text-gray-600 mb-6">
+         
+          <div className="flex items-center gap-1 text-gray-600 mb-3">
             <span className="flex items-center gap-1">
               <Eye size={18} /> {post.views || 0}
             </span>
@@ -102,14 +101,14 @@ export default function BlogDetailPage() {
             </span>
           </div>
 
-          {/* ✅ Blog Content */}
+       
           <div
             className="prose max-w-none text-[#3e2723] leading-relaxed"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
-          {/* ✅ Share Buttons */}
-          <div className="flex flex-wrap gap-4 mt-8 border-t pt-4">
+      
+          <div className="flex flex-wrap gap-3 mt-0 border-t pt-4">
             <button
               onClick={() => sharePost("twitter")}
               className="flex items-center gap-2 bg-[#1DA1F2] text-white px-4 py-2 rounded-xl hover:opacity-90 transition"
@@ -136,7 +135,7 @@ export default function BlogDetailPage() {
             </button>
           </div>
 
-          {/* ✅ Comments Section */}
+          
           {showComments && (
             <div className="mt-10 border-t pt-6">
               <h3 className="text-xl font-semibold text-[#4e342e] mb-4">Comments</h3>
@@ -153,7 +152,7 @@ export default function BlogDetailPage() {
             </div>
           )}
 
-       {/* ✅ Related Posts */}
+      
 {related.length > 0 && (
   <div className="mt-10 border-t pt-6">
     <h3 className="text-xl font-semibold text-[#4e342e] mb-4">
@@ -167,9 +166,9 @@ export default function BlogDetailPage() {
           key={r._id}
           className="border rounded-xl overflow-hidden bg-white shadow-md hover:shadow-lg transition-all duration-300 group"
         >
-          {/* ✅ Only show image if available */}
+         
           {r.image && (
-            <div className="relative w-full h-44 bg-gray-100">
+            <div className="relative w-full h-40 bg-gray-100">
               <Image
                 src={r.image}
                 alt={r.title}
@@ -180,7 +179,7 @@ export default function BlogDetailPage() {
             </div>
           )}
 
-          {/* ✅ Text */}
+     
           <div className="p-4">
             <h4 className="font-semibold mb-2 text-[#4e342e] group-hover:text-[#7f5539] transition-colors">
               {r.title}
@@ -194,8 +193,7 @@ export default function BlogDetailPage() {
     </div>
   </div>
 )}
-
-        </div>
+</div>
       </div>
     </main>
   );

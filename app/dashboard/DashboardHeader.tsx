@@ -48,7 +48,7 @@ export default function DashboardHeader() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search posts..."
-          className="pl-2 pr-2 py-0.5 rounded-lg border border-b-amber-900 focus:outline-none focus:ring-2 focus:ring-[#9c6644]/60 text-sm text-gray-800"
+          className="pl-2 pr-2 py-0.5 rounded-lg border border-b-amber-900 focus:outline-none focus:ring-2 focus:ring-[#9c6644]/60 text-sm text-gray-800 flex items-center justify-between"
         />
 
         <button
